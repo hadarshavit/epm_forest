@@ -52,7 +52,6 @@ class EPMRandomForest(ForestRegressor):
             warm_start=warm_start, 
             max_samples=max_samples)
         self.criterion = criterion
-        self.splitter = splitter
         self.max_depth = max_depth
         self.min_samples_split = min_samples_split
         self.min_samples_leaf = min_samples_leaf
@@ -62,6 +61,7 @@ class EPMRandomForest(ForestRegressor):
         self.min_impurity_decrease = min_impurity_decrease
         self.ccp_alpha = ccp_alpha
         self.monotonic_cst = monotonic_cst
+        self.splitter = splitter
         self.log = log
         self.cross_trees_variance = cross_trees_variance
     
@@ -72,12 +72,23 @@ class EPMRandomForest(ForestRegressor):
         
         self.trainX = X
         self.trainY = y
-        for tree, samples_idx in zip(self.estimators_, self.estimators_samples_):
-            curX = X[samples_idx]
-            curY = y[samples_idx]
-            preds = tree.apply(curX)
-            for k in np.unique(preds):
-                tree.tree_.value[k, 0, 0] = np.exp(curY[preds == k]).sum()
+        if self.log:
+            for tree, samples_idx in zip(self.estimators_, self.estimators_samples_):
+                curX = X[samples_idx]
+                curY = y[samples_idx]
+                preds = tree.apply(curX)
+                for k in np.unique(preds):
+                    tree.tree_.value[k, 0, 0] = np.exp(curY[preds == k]).sum()
 
+    def predict(self, X):
+        preds = []
+        for tree, samples_idx in zip(self.estimators_, self.estimators_samples_):
+            preds.append(tree.predict(X))
+        preds = np.array(preds).T
+        
+        means = preds.mean(axis=1)
+        vars = preds.var(axis=1)
+        
+        return means.reshape(-1, 1), vars.reshape(-1, 1)
 
 
