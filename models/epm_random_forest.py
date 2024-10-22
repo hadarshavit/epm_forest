@@ -78,7 +78,7 @@ class EPMRandomForest(ForestRegressor):
                 curY = y[samples_idx]
                 preds = tree.apply(curX)
                 for k in np.unique(preds):
-                    tree.tree_.value[k, 0, 0] = np.exp(curY[preds == k]).sum()
+                    tree.tree_.value[k, 0, 0] = np.log(np.exp(curY[preds == k]).mean())
 
     def predict(self, X):
         preds = []
@@ -88,7 +88,7 @@ class EPMRandomForest(ForestRegressor):
         
         means = preds.mean(axis=1)
         vars = preds.var(axis=1)
-        
+
         return means.reshape(-1, 1), vars.reshape(-1, 1)
 
 
